@@ -16,8 +16,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QGridLayout, QLineEdit, QMainWindow,
-    QMenuBar, QPushButton, QSizePolicy, QStackedWidget,
-    QStatusBar, QWidget)
+    QMenuBar, QPushButton, QSizePolicy, QSpacerItem,
+    QStackedWidget, QStatusBar, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -28,16 +28,6 @@ class Ui_MainWindow(object):
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout_2 = QGridLayout(self.centralwidget)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.lineEdit_pastelink = QLineEdit(self.centralwidget)
-        self.lineEdit_pastelink.setObjectName(u"lineEdit_pastelink")
-
-        self.gridLayout_2.addWidget(self.lineEdit_pastelink, 0, 0, 1, 1)
-
-        self.pushButton_go = QPushButton(self.centralwidget)
-        self.pushButton_go.setObjectName(u"pushButton_go")
-
-        self.gridLayout_2.addWidget(self.pushButton_go, 0, 1, 1, 1)
-
         self.stackedWidget = QStackedWidget(self.centralwidget)
         self.stackedWidget.setObjectName(u"stackedWidget")
         self.page_1 = QWidget()
@@ -47,9 +37,23 @@ class Ui_MainWindow(object):
         self.page_2.setObjectName(u"page_2")
         self.gridLayout = QGridLayout(self.page_2)
         self.gridLayout.setObjectName(u"gridLayout")
+        self.lineEdit_pastelink = QLineEdit(self.page_2)
+        self.lineEdit_pastelink.setObjectName(u"lineEdit_pastelink")
+
+        self.gridLayout.addWidget(self.lineEdit_pastelink, 0, 0, 1, 1)
+
+        self.pushButton_go = QPushButton(self.page_2)
+        self.pushButton_go.setObjectName(u"pushButton_go")
+
+        self.gridLayout.addWidget(self.pushButton_go, 0, 1, 1, 1)
+
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.gridLayout.addItem(self.verticalSpacer, 1, 0, 1, 2)
+
         self.stackedWidget.addWidget(self.page_2)
 
-        self.gridLayout_2.addWidget(self.stackedWidget, 1, 0, 1, 2)
+        self.gridLayout_2.addWidget(self.stackedWidget, 0, 0, 1, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)

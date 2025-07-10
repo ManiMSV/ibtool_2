@@ -1,7 +1,7 @@
 # This Python file uses the following encoding: utf-8
 import sys
 
-from PySide6.QtWidgets import QApplication, QMainWindow ,QVBoxLayout
+from PySide6.QtWidgets import QApplication, QMainWindow
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebEngineCore import QWebEngineProfile
 from PySide6.QtCore import QUrl
@@ -11,96 +11,72 @@ from PySide6.QtCore import QUrl
 #     pyside6-uic form.ui -o ui_form.py, or
 #     pyside2-uic form.ui -o ui_form.py
 from ui_form import Ui_MainWindow
-
+# from PySide6.QtCore import QTimer
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.browser = QWebEngineView(self)
-        self.profile = QWebEngineProfile.defaultProfile()
-        layout = QVBoxLayout(self.ui.page_1)
-        layout.addWidget(self.browser)
-        self.ui.page_1.setLayout(layout)
-        self.ui.stackedWidget.setCurrentWidget(self.ui.page_1)
-        self.browser.setUrl(QUrl("https://ft-eu.gehealthcare.com/EFTClient/Account/Login.htm"))
-        self.browser.urlChanged.connect(self.on_url_changed)
-
-    def on_url_changed(self, url):
-        url_str = url.toString()
-        print(f"Page navigated to: {url_str}")
-        if "/Home" in url_str:
-            print("Logged in! Attempting to collect CSRF token...")
-            self.collect_csrf_token()
-
-    def collect_csrf_token(self):
-        # Run JavaScript to get CSRF token from cookies
-        js = """
-            (function() {
-                let csrf = "";
-                document.cookie.split(';').forEach(function(cookie) {
-                    let [name, value] = cookie.split('=');
-                    if (name && name.trim().toLowerCase().includes('csrf')) {
-                        csrf = value;
-                    }
-                });
-                return csrf;
-            })();
-        """
-        self.browser.page().runJavaScript(js, self.handle_csrf_token)
-
-    def handle_csrf_token(self, token):
-        print(f"CSRF Token: {token}")
-        # You can store the token or use it as needed here
         self.ui.stackedWidget.setCurrentWidget(self.ui.page_2)
 
-    def setup_page_2(self):
-        self.ui.pushButton_go.clicked.connect(self.on_go_clicked)
+        # Setup browser
+        self.browser = QWebEngineView()
+        self.profile = QWebEngineProfile.defaultProfile()
+        layout = self.ui.page_2.layout()
+        layout.addWidget(self.browser)
 
-    def on_go_clicked(self):
-        url = self.ui.lineEdit_pastelink.text().strip()
-        if not url:
+        # Connect button
+        self.ui.pushButton_go.clicked.connect(self.display_link)
+
+        self.session_id = None
+
+        # Connect cookie handler once
+        cookie_store = self.profile.cookieStore()
+        cookie_store.cookieAdded.connect(self.handle_cookie)
+
+        # Debug: watch browser events
+        self.print_browser_events()
+
+    def display_link(self):
+        url_text = self.ui.lineEdit_pastelink.text().strip()
+        if not url_text:
             print("No URL entered.")
             return
-        # Use the previously collected CSRF token if needed
-        # For demonstration, we'll just print it and load the URL
-        print(f"Loading URL: {url} with CSRF Token: {getattr(self, 'csrf_token', None)}")
-        self.browser.setUrl(QUrl(url))
+        if not url_text.startswith("http"):
+            url_text = "https://" + url_text
+        self.browser.setUrl(QUrl(url_text))
 
-    def handle_csrf_token(self, token):
-        print(f"CSRF Token: {token}")
-        self.csrf_token = token
-        self.setup_page_2()
-        self.ui.stackedWidget.setCurrentWidget(self.ui.page_2)
+    def handle_cookie(self, cookie):
+        name = cookie.name().data().decode()
+        value = cookie.value().data().decode()
+        print(f"Cookie added: {name} = {value}")
 
+        if name == "websessionid":
+            self.session_id = value
+            print(f"Session ID fetched: {self.session_id}")
 
-    # def on_url_changed(self, url):
-    #     print(f"Page navigated to: {url.toString()}")
-    #     if "/Home" in url.toString():
-    #         print("Logged in! Capturing cookies...")
-    #         self.dump_cookies()
+            # Now reload immediately
+            self.reload_page_with_session()
 
-    # def dump_cookies(self):
-    #     cookie_store = self.profile.cookieStore()
-    #     cookie_store.cookiesAdded.connect(self.save_cookies)
-    #     cookie_store.loadAllCookies()
+    def reload_page_with_session(self):
+        url_text = self.ui.lineEdit_pastelink.text().strip()
+        if not url_text:
+            print("No URL entered for reload.")
+            return
+        if not url_text.startswith("http"):
+            url_text = "https://" + url_text
 
-    # def save_cookies(self, cookies):
-    #     cookies_saved = False
-    #     for cookie in cookies:
-    #         name = bytes(cookie.name()).decode()
-    #         value = bytes(cookie.value()).decode()
-    #         domain = cookie.domain()
-    #         path = cookie.path()
-    #         print(f"Cookie: {name}={value}; Domain={domain}; Path={path}")
-    #         with open("cookies.txt", "a") as f:
-    #             f.write(f"{name}={value}; domain={domain}; path={path}\n")
-    #         cookies_saved = True
-    #     if cookies_saved:
-    #         self.ui.stackedWidget.setCurrentWidget(self.ui.page_2)
-    #     else:
-    #         pass
+        print(f"Reloading URL with session ID: {self.session_id}")
+        self.browser.setUrl(QUrl(url_text))
+
+    def print_browser_events(self):
+        # Useful for debugging page loads
+        self.browser.urlChanged.connect(lambda url: print(f"URL changed: {url.toString()}"))
+        self.browser.loadStarted.connect(lambda: print("Load started"))
+        self.browser.loadProgress.connect(lambda progress: print(f"Load progress: {progress}%"))
+        self.browser.loadFinished.connect(lambda ok: print(f"Load finished: {'Success' if ok else 'Failed'}"))
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

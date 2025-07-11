@@ -18,24 +18,17 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.stackedWidget.setCurrentWidget(self.ui.page_2)
+        self.ui.stackedWidget.setCurrentWidget(self.ui.page_2)  # ---> setting up browser widget in stacked widget
 
-        # Setup browser
         self.browser = QWebEngineView()
-        self.profile = QWebEngineProfile.defaultProfile()
+        self.profile = QWebEngineProfile.defaultProfile()   # ---> creating a default profile to store cookie aka. seesion id
         layout = self.ui.page_2.layout()
         layout.addWidget(self.browser)
-
-        # Connect button
-        self.ui.pushButton_go.clicked.connect(self.display_link)
+        self.ui.pushButton_go.clicked.connect(self.display_link)    # ---> connecting go button to display the link in lineedit
 
         self.session_id = None
-
-        # Connect cookie handler once
-        cookie_store = self.profile.cookieStore()
-        cookie_store.cookieAdded.connect(self.handle_cookie)
-
-        # Debug: watch browser events
+        cookie_store = self.profile.cookieStore()   # ---> from profile fetching all cookies
+        cookie_store.cookieAdded.connect(self.handle_cookie)    # ---> connecting to handle_cookie
         self.print_browser_events()
 
     def display_link(self):
@@ -55,8 +48,6 @@ class MainWindow(QMainWindow):
         if name == "websessionid":
             self.session_id = value
             print(f"Session ID fetched: {self.session_id}")
-
-            # Now reload immediately
             self.reload_page_with_session()
 
     def reload_page_with_session(self):
